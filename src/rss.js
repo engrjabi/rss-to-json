@@ -6,7 +6,7 @@ var util = require('util'),
 
 
 module.exports = {
-  load: function (url, callback) {
+  load: function (url, callback, includeAdditionalFields) {
     var $ = this;
     request({
       url: url,
@@ -25,7 +25,7 @@ module.exports = {
         });
         parser.parseString(xml, function (err, result) {
 
-          callback(null, $.parser(result));
+          callback(null, $.parser(result, includeAdditionalFields));
           //console.log(JSON.stringify(result.rss.channel));
         });
 
@@ -35,7 +35,7 @@ module.exports = {
     });
 
   },
-  parser: function (json) {
+  parser: function (json, includeAdditionalFields) {
     var channel = json.rss.channel;
     var rss = { items: [] };
     if (util.isArray(json.rss.channel))
@@ -68,6 +68,7 @@ module.exports = {
       }
       channel.item.forEach(function (val) {
         var obj = {};
+        var additionalFields = includeAdditionalFields ? includeAdditionalFields(val) : {}
         obj.title = !util.isNullOrUndefined(val.title) ? val.title[0] : '';
         obj.description = !util.isNullOrUndefined(val.description) ? val.description[0] : '';
         obj.url = obj.link = !util.isNullOrUndefined(val.link) ? val.link[0] : '';
@@ -121,7 +122,10 @@ module.exports = {
           });
 
         }
-        rss.items.push(obj);
+        rss.items.push({
+          obj,
+          ...additionalFields
+        });
 
       });
 
